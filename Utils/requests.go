@@ -1,68 +1,96 @@
 package Utils
 
-const (
-	apiEndpoint    = "https://api.openai.com/v1/chat/completions"
-	addFunc        = "def add_numbers(a, b):\n    return a + b"
-	pythonEven     = "def is_even_or_odd(number):\n    if number % 2 == 0:\n        return \"even\"\n    else:\n        return \"odd\""
-	javaScriptEven = "function isEvenOrOdd(number) {\n    if (number % 2 === 0) {\n        return \"even\";\n    } else {\n        return \"odd\";\n    }\n}\n\nconst testNumber = 4;\nconst result = isEvenOrOdd(testNumber);\nconsole.log(\\`The number \\${testNumber} is \\${result}.\\`);"
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/go-resty/resty/v2"
+	"github.com/joho/godotenv"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
 )
 
-func pythonCode(task string) (string, bool) {
-	switch task {
-	case "add":
-		return addFunc, true
-	case "even or odd":
-		return pythonEven, true
+const (
+	apiEndpoint = "https://api.openai.com/v1/chat/completions"
+)
+
+func writeData(data map[string]interface{}) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	err = ioutil.WriteFile("respons.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println("error writing JSON to file: %v", err)
 	}
-	return "Unable to Generate Code", false
 }
 
-func javascriptCode(task string) (string, bool) {
-	switch task {
-	case "even or odd":
-		return javaScriptEven, true
+func separateContent(data string, language string) [3]string {
+	parts := strings.Split(data, "```\n")
+	fmt.Println(len(parts))
+
+	codeSnippet := ""
+	description := ""
+
+	if len(parts) <= 1 {
+		codeSnippet = data
+	} else if len(parts) == 2 {
+		codeSnippet = strings.TrimPrefix(parts[0], language+"\n")
+		description = parts[1]
+	} else if len(parts) == 3 {
+		description = parts[0]
+		codeSnippet = strings.TrimPrefix(parts[2], language+"\n")
+		description = description + parts[2]
 	}
-	return "unable to generate code", false
+	sections := [3]string{codeSnippet, description}
+	return sections
+
 }
 
-func Run(task string, language string) (string, bool) {
-	switch language {
-	case "python":
-		return pythonCode(task)
-	case "javascript":
-		return javascriptCode(task)
+func SendRequest(task string, language string, typeOfJob string) (string, bool) {
+
+	//return "Unable to Generate Code", false
+	payload := ""
+	if typeOfJob == "write" {
+		payload = "Create " + language + " code to do the following task: " + task + ", Give me the code as a string with comments"
+	} else if typeOfJob == "fix" {
+		payload = "fix the error in the following " + language + " code: " + task + ", please state what changes were made covered by triple backticks"
 	}
-	return "Unable to Generate Code", false
 
 	// Use your API KEY here
-	//apiKey :=
-	//client := resty.New()
-	//
-	//response, err := client.R().
-	//	SetAuthToken(apiKey).
-	//	SetHeader("Content-Type", "application/json").
-	//	SetBody(map[string]interface{}{
-	//		"model":      "gpt-3.5-turbo",
-	//		"messages":   []interface{}{map[string]interface{}{"role": "system", "content": "Hi can you tell me what is the factorial of 10?"}},
-	//		"max_tokens": 50,
-	//	}).
-	//	Post(apiEndpoint)
-	//
-	//if err != nil {
-	//	log.Fatalf("Error while sending send the request: %v", err)
-	//}
-	//
-	//body := response.Body()
-	//
-	//var data map[string]interface{}
-	//err = json.Unmarshal(body, &data)
-	//if err != nil {
-	//	fmt.Println("Error while decoding JSON response:", err)
-	//	return
-	//}
-	//
-	//// Extract the content from the JSON response
-	//content := data["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
-	//fmt.Println(content)
+	godotenv.Load()
+
+	apiKey := os.Getenv("OPENAI_TOKEN")
+	client := resty.New()
+
+	response, err := client.R().
+		SetAuthToken(apiKey).
+		SetHeader("Content-Type", "application/json").
+		SetBody(map[string]interface{}{
+			"model":      "gpt-3.5-turbo",
+			"messages":   []interface{}{map[string]interface{}{"role": "system", "content": payload}},
+			"max_tokens": 1000,
+		}).
+		Post(apiEndpoint)
+
+	if err != nil {
+		log.Fatalf("Error while sending send the request: %v", err)
+	}
+
+	body := response.Body()
+
+	var data map[string]interface{}
+	err = json.Unmarshal(body, &data)
+
+	writeData(data)
+
+	if err != nil {
+		fmt.Println("Error while decoding JSON response:", err)
+		return "Error while decoding JSON response:", false
+	}
+
+	// Extract the content from the JSON response
+	content := data["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
+	fmt.Println(content)
+
+	return content, true
 
 }

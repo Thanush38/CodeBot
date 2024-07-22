@@ -7,7 +7,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
+	"time"
 )
 
 var BotToken string
@@ -45,8 +47,35 @@ func separateMessage(messageStr string, removeStr string) string {
 	fmt.Println(cleanedContent)
 	return cleanedContent
 }
+func separateContent(data string, language string) [3]string {
+	parts := strings.Split(data, "```\n")
+	fmt.Println("parts in separation: " + fmt.Sprintf(strconv.Itoa(len(parts))))
 
-func getFileName(messageStr string) (string, string, string) {
+	codeSnippet := ""
+	description := ""
+
+	startIndex := strings.Index(data, "```"+language)
+	endIndex := strings.LastIndex(data, "```")
+
+	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
+		fmt.Println("Data does not contain the expected code block.")
+
+		return [3]string{"Data does not contain the expected code block."}
+	}
+
+	// Extract and clean the code snippet
+	codeSnippet = data[startIndex+len("```javascript\n") : endIndex]
+	description = data[:startIndex] + data[endIndex+len("```"):]
+
+	fmt.Println("Code Snippet:\n", codeSnippet)
+	fmt.Println("\nDescription:\n", description)
+
+	sections := [3]string{codeSnippet, description}
+	return sections
+
+}
+
+func getFileName(messageStr string, typeOfJob string) (string, string, string, bool) {
 	parts := strings.SplitN(messageStr, " ", 2)
 	cleanedContent := ""
 	fileName := parts[0]
@@ -54,10 +83,34 @@ func getFileName(messageStr string) (string, string, string) {
 	if len(parts) > 1 {
 		cleanedContent = strings.TrimSpace(parts[1])
 	}
+
+	data := ""
+	if fileName == "" {
+		data = "No language was entered!\n To view how to use this bot visit: https://github.com/Thanush38/CodeBot"
+		return fileName, ".txt", data, false
+	}
+	if cleanedContent == "" {
+		data = "No task was entered!\n To view how to use this bot visit: https://github.com/Thanush38/CodeBot"
+		return fileName, ".txt", data, false
+	}
 	extension := getFileExtension(fileName)
+
+	if extension == "err" {
+		data = "Entered Language is not supported! \n To view a list of all languages available visit: https://github.com/Thanush38/CodeBot"
+		return fileName, ".txt", data, false
+	}
+
 	fmt.Println(extension)
 
-	return cleanedContent, fileName, extension
+	content, success := Utils.SendRequest(cleanedContent, fileName, typeOfJob)
+
+	//if success {
+	//	discord.ChannelFileSend(message.ChannelID, "hello."+extension, strings.NewReader(data))
+	//} else {
+	//	discord.ChannelMessageSend(message.ChannelID, data)
+	//}
+
+	return fileName, extension, content, success
 }
 
 func getFileExtension(fileName string) string {
@@ -77,6 +130,16 @@ func getFileExtension(fileName string) string {
 	}
 	return "err"
 }
+func getFileTitle(language string) string {
+
+	now := time.Now()
+	year, month, day := now.Date()
+	hour, minute, second := now.Clock()
+	Name := fmt.Sprintf("CodeBot %s Code generated at %d-%02d-%02d %02d-%02d-%02d", language, year, month, day, hour, minute, second)
+
+	return Name
+
+}
 
 func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 
@@ -94,18 +157,28 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	case strings.Contains(message.Content, "!help"):
 		discord.ChannelMessageSend(message.ChannelID, "Hello World😃")
 	case strings.Contains(message.Content, "!bye"):
-		discord.ChannelMessageSend(message.ChannelID, "Good Bye👋")
+		Name := getFileTitle("Python")
+		discord.ChannelFileSend(message.ChannelID, Name+".txt", strings.NewReader("hi"))
 	case strings.Contains(message.Content, "!code"):
 		cleanedData := separateMessage(message.Content, "!code")
-		task, fileName, extension := getFileName(cleanedData)
-		data, success := Utils.Run(task, fileName)
+		language, extension, data, success := getFileName(cleanedData, "write")
 		if success {
-			discord.ChannelFileSend(message.ChannelID, "hello."+extension, strings.NewReader(data))
+			sections := separateContent(data, language)
+			discord.ChannelFileSend(message.ChannelID, getFileTitle(language)+"."+extension, strings.NewReader(sections[0]))
+			if sections[1] != "" {
+				discord.ChannelMessageSend(message.ChannelID, sections[1])
+			}
 		} else {
 			discord.ChannelMessageSend(message.ChannelID, data)
 		}
-
-		// add more cases if required
+	case strings.Contains(message.Content, "!fix"):
+		cleanedData := separateMessage(message.Content, "!fix")
+		language, extension, data, success := getFileName(cleanedData, "fix")
+		if success {
+			discord.ChannelFileSend(message.ChannelID, getFileTitle(language)+"."+extension, strings.NewReader(data))
+		} else {
+			discord.ChannelMessageSend(message.ChannelID, data)
+		}
 	}
 
 }
