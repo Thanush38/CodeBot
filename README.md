@@ -8,6 +8,14 @@ CodeBot is a Discord bot designed to help developers by generating code snippets
 - Explain code functionality.
 - Supports languages such as Python, JavaScript, Java, C#, PHP, Go, TypeScript, Ruby, Swift, and more.
 
+## Examples
+### Code:
+![Write](images/CodeImage.png)
+### Fix:
+![Fix](images/FixImage.png)
+### Explain:
+![Explain](images/Explain.png)
+
 ## Getting Started
 
 ### Prerequisites
@@ -68,30 +76,15 @@ Replace `YOUR_CLIENT_ID` with your bot's client ID.
 
 ## Supported Languages
 
-- Python
-- JavaScript
-- Java
-- C#
-- PHP
-- Go
-- TypeScript
-- Ruby
-- Swift
-- Kotlin
-- Rust
-- Scala
-- Perl
-- R
-- Shell
-- HTML
-- CSS
-- SQL
-- Dart
-- Haskell
-- Lua
-- Objective-C
-- C
-- C++
+| Languages      |               |             |             |
+|----------------|---------------|-------------|-------------|
+| Python         | JavaScript    | Java        | C#          |
+| PHP            | Go            | TypeScript  | Ruby        |
+| Swift          | Kotlin        | Rust        | Scala       |
+| Perl           | R             | Shell       | HTML        |
+| CSS            | SQL           | Dart        | Haskell     |
+| Lua            | Objective-C   | C           | C++         |
+
 
 
 ## Contributing

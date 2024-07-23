@@ -53,6 +53,8 @@ func SendRequest(task string, language string, typeOfJob string) (string, bool) 
 		payload = "Create " + language + " code to do the following task: " + task + ", Give me the code as a string with comments"
 	} else if typeOfJob == "fix" {
 		payload = "fix the error in the following " + language + " code: " + task + ", please state what changes were made covered by triple backticks"
+	} else if typeOfJob == "explain" {
+		payload = "Explain the following " + language + " code: " + task
 	}
 
 	// Use your API KEY here

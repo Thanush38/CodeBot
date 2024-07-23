@@ -213,6 +213,14 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 		} else {
 			discord.ChannelMessageSend(message.ChannelID, data)
 		}
+	case strings.Contains(message.Content, "!explain"):
+		cleanedData := separateMessage(message.Content, "!explain")
+		_, _, data, success := getFileName(cleanedData, "explain")
+		if success {
+			discord.ChannelFileSend(message.ChannelID, getFileTitle("txt")+".txt", strings.NewReader(data))
+		} else {
+			discord.ChannelMessageSend(message.ChannelID, data)
+		}
 	}
 
 }
