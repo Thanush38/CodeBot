@@ -120,15 +120,52 @@ func getFileExtension(fileName string) string {
 	case "java":
 		return "java"
 	case "csharp":
-		return "csharp"
+		return "cs"
 	case "php":
 		return "php"
 	case "go":
 		return "go"
 	case "javascript":
 		return "js"
+	case "typescript":
+		return "ts"
+	case "ruby":
+		return "rb"
+	case "swift":
+		return "swift"
+	case "kotlin":
+		return "kt"
+	case "rust":
+		return "rs"
+	case "scala":
+		return "scala"
+	case "perl":
+		return "pl"
+	case "r":
+		return "r"
+	case "shell":
+		return "sh"
+	case "html":
+		return "html"
+	case "css":
+		return "css"
+	case "sql":
+		return "sql"
+	case "dart":
+		return "dart"
+	case "haskell":
+		return "hs"
+	case "lua":
+		return "lua"
+	case "objective-c":
+		return "m"
+	case "c":
+		return "c"
+	case "cpp":
+		return "cpp"
+	default:
+		return "err"
 	}
-	return "err"
 }
 func getFileTitle(language string) string {
 
@@ -155,10 +192,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 
 	switch {
 	case strings.Contains(message.Content, "!help"):
-		discord.ChannelMessageSend(message.ChannelID, "Hello World😃")
-	case strings.Contains(message.Content, "!bye"):
-		Name := getFileTitle("Python")
-		discord.ChannelFileSend(message.ChannelID, Name+".txt", strings.NewReader("hi"))
+		discord.ChannelMessageSend(message.ChannelID, "Type: !code !language instructions to generate code \n Type: !fix !language and code to fix")
 	case strings.Contains(message.Content, "!code"):
 		cleanedData := separateMessage(message.Content, "!code")
 		language, extension, data, success := getFileName(cleanedData, "write")
